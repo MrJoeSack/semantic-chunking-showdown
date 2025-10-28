@@ -199,22 +199,27 @@ Read this text and identify where major topic shifts occur. Return the paragraph
 Text:
 {text}
 
-Analyze the semantic structure and return ONLY a JSON array of paragraph numbers where splits should occur.
-For example: [2, 4, 6] means split after paragraphs 2, 4, and 6.
+Analyze the semantic structure and return a JSON object with a "splits" array containing paragraph numbers where splits should occur.
+For example: {{"splits": [2, 4, 6]}} means split after paragraphs 2, 4, and 6.
 
-Return ONLY the JSON array, no explanation."""
+Return ONLY the JSON object, no explanation."""
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}],
-        temperature=0  # Deterministic
+        temperature=0,  # More consistent (though not guaranteed identical across runs)
+        response_format={"type": "json_object"}  # Force JSON output
     )
 
     # Parse the response
     try:
-        split_points = json.loads(response.choices[0].message.content)
-    except:
-        # Fallback: split into paragraphs
+        response_data = json.loads(response.choices[0].message.content)
+        # Handle both {"splits": [1,2,3]} and direct array formats
+        split_points = response_data.get("splits", response_data.get("array", []))
+        if not isinstance(split_points, list):
+            raise ValueError("Invalid response format")
+    except (json.JSONDecodeError, ValueError, KeyError) as e:
+        # Fallback: split into paragraphs if LLM response fails
         paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
         return paragraphs
 
@@ -509,21 +514,27 @@ client = OpenAI()
 
 # Ask the LLM to identify semantic boundaries
 prompt = f\"\"\"Analyze this text and identify where major
-topic shifts occur. Return paragraph numbers where you
-would split the text.
+topic shifts occur. Return a JSON object with paragraph
+numbers where you would split the text.
 
 Text: {text}
 
-Return ONLY a JSON array like: [1, 2, 3, 4, 5]\"\"\"
+Return JSON like: {{"splits": [2, 4, 6]}}\"\"\"
 
 response = client.chat.completions.create(
     model="gpt-4o-mini",
     messages=[{"role": "user", "content": prompt}],
-    temperature=0  # Deterministic
+    temperature=0,  # More consistent (not guaranteed)
+    response_format={{"type": "json_object"}}  # Force JSON
 )
 
-# Parse LLM's decisions
-split_points = json.loads(response.choices[0].message.content)
+# Parse LLM's decisions with error handling
+try:
+    data = json.loads(response.choices[0].message.content)
+    split_points = data.get("splits", [])
+except (json.JSONDecodeError, KeyError):
+    # Fallback: split by paragraphs
+    split_points = []
 
 # Split text at LLM-identified boundaries
 paragraphs = text.split('\\n\\n')
@@ -533,6 +544,11 @@ for split_point in split_points:
     chunk = '\\n\\n'.join(paragraphs[start:split_point])
     chunks.append(chunk)
     start = split_point
+
+# CRITICAL: Add the final chunk after the last split point
+final_chunk = '\\n\\n'.join(paragraphs[start:])
+if final_chunk:
+    chunks.append(final_chunk)
 
 # Result: True semantic understanding based on content
     """, language="python")
