@@ -310,7 +310,7 @@ st.markdown(f"""
 <strong>The Challenge:</strong> Traditional keyword search can't understand meaning. Searching for "electrical issues" won't find
 "power problems" or "circuit breaker failures" even though they're semantically related.
 <br><br>
-<strong>The Solution:</strong> Embeddings convert text into vectors (arrays of numbers) that capture semantic meaning.
+<strong>The Solution:</strong> Embedding models convert text into vectors (arrays of numbers) that capture semantic meaning.
 Words with similar meanings have similar vectors. This lets us find relevant content based on meaning, not just matching keywords.
 <br><br>
 <strong>Example:</strong> The phrases "foundation crack" and "structural damage" will have similar embedding vectors because
