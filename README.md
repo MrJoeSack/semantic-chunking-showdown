@@ -102,8 +102,6 @@ semantic-chunking-showdown/
 ├── .streamlit/
 │   └── config.toml                # Streamlit theme configuration
 ├── README.md                      # This file
-├── LLM_SEMANTIC_CHUNKING_COMPLETE.md  # Technical implementation notes
-├── FLOW_RESTRUCTURE.md            # UI flow documentation
 └── test_*.py                      # Testing scripts
 ```
 
